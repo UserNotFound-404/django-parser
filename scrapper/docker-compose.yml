@@ -1,0 +1,46 @@
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./scrapper/.env
+    environment:
+      - DJANGO_SETTINGS_MODULE=scrapper.settings
+    depends_on:
+      - db
+  db:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+
+  celery:
+    build: .
+    command: celery -A scrapper worker --loglevel=info
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/scrapper
+  celery-beat:
+    build: .
+    command: celery -A scrapper beat --loglevel=info
+    depends_on:
+      - redis
+    volumes:
+      - .:/scrapper
+
+volumes:
+  postgres_data:
