@@ -28,7 +28,9 @@ services:
 
   celery:
     build: .
-    command: celery -A scrapper worker --loglevel=info
+    command: >
+      celery -A scrapper beat --loglevel=info 
+      --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
       - db
       - redis

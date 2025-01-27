@@ -78,8 +78,10 @@ WSGI_APPLICATION = 'scrapper.wsgi.application'
 
 # CELERY
 CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
