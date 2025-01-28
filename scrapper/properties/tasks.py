@@ -9,4 +9,6 @@ logger = get_task_logger(__name__)
 
 @shared_task
 def update_properties():
+    logger.info("Starting task")
     scrape_properties_task()
+    logger.info("Ending task")

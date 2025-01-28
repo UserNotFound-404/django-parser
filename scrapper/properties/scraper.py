@@ -2,6 +2,7 @@ import time
 from random import uniform, randint
 import re
 
+from celery.utils.log import get_task_logger
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -9,6 +10,9 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from .models import Image, Property
 from .utils import parse_price
+
+
+logger = get_task_logger(__name__)
 
 
 def scrape_properties_task(min_price="5000000"):
@@ -34,7 +38,7 @@ def scrape_properties_task(min_price="5000000"):
             reject_cookies_button = driver.find_element(By.CSS_SELECTOR, '#onetrust-reject-all-handler')
             reject_cookies_button.click()
         except:
-            print("Cookies were not asked")
+            logger.info("Cookies were not asked")
 
         properties = driver.find_elements(By.CSS_SELECTOR, '.l-searchResult')
         pages_amount = driver.find_element(By.CSS_SELECTOR, '[data-bind="text: total"]').text
@@ -88,7 +92,7 @@ def scrape_properties_task(min_price="5000000"):
                         bathrooms_count = bathrooms.split()[0] if bathrooms else None
                     except Exception as e:
                         bathrooms_count = None
-                    print("Adding info about", address)
+                    logger.info("Adding info about", address)
                     parsed_properties[property_url] = {
                             "address": address,
                             "price": price,
@@ -105,7 +109,7 @@ def scrape_properties_task(min_price="5000000"):
                         parsed_properties[property_url]["images"].append(image_url)
 
                 except Exception as e:
-                    print("Error occurred", e)
+                    logger.info("Error occurred", e)
             time.sleep(randint(0, 3))
             driver.get(next_page_link)
             WebDriverWait(driver, 50).until(
@@ -114,7 +118,7 @@ def scrape_properties_task(min_price="5000000"):
             properties = driver.find_elements(By.CSS_SELECTOR, '.l-searchResult')
 
     except Exception as e:
-        print("Error occurred", e)
+        logger.info("Error occurred", e)
 
     finally:
         driver.quit()
@@ -125,7 +129,7 @@ def scrape_properties_task(min_price="5000000"):
     urls_to_delete = db_urls - parsed_urls
     if urls_to_delete:
         Property.objects.filter(url__in=urls_to_delete).delete()
-        print(f"Deleted {len(urls_to_delete)} records.")
+        logger.info(f"Deleted {len(urls_to_delete)} records.")
 
     urls_to_add = parsed_urls - db_urls
     new_properties = [
@@ -145,7 +149,7 @@ def scrape_properties_task(min_price="5000000"):
         if url in urls_to_add
     ]
     Property.objects.bulk_create(new_properties)
-    print(f"Added {len(new_properties)} new records")
+    logger.info(f"Added {len(new_properties)} new records")
 
     images_to_create = []
 
@@ -164,7 +168,7 @@ def scrape_properties_task(min_price="5000000"):
                     )
                 )
     Image.objects.bulk_create(images_to_create)
-    print(f"Added {len(images_to_create)} images")
+    logger.info(f"Added {len(images_to_create)} images")
 
 
 def scrape_additional_info(link):  # TODO: add description parsing
@@ -213,9 +217,9 @@ def scrape_additional_info(link):  # TODO: add description parsing
         for image_url in floorplan:
             Image.objects.create(property=property_record, image_url=image_url, floorplan=True)
 
-        print(f"Updated property {link} with additional info.")
+        logger.info(f"Updated property {link} with additional info.")
     except Exception as e:
-        print(f"ERROR - {e}")
+        logger.info(f"ERROR - {e}")
     finally:
         driver.quit()
 
