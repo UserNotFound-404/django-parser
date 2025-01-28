@@ -30,9 +30,7 @@ services:
 
   celery:
     build: .
-    command: >
-      celery -A scrapper beat --loglevel=info 
-      --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    command: celery -A scrapper worker --loglevel=info
     depends_on:
       - db
       - redis
@@ -40,7 +38,9 @@ services:
       - .:/scrapper
   celery-beat:
     build: .
-    command: celery -A scrapper beat --loglevel=info
+    command: >
+      celery -A scrapper beat --loglevel=info 
+      --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
       - redis
     volumes:

@@ -92,7 +92,8 @@ def scrape_properties_task(min_price="5000000"):
                         bathrooms_count = bathrooms.split()[0] if bathrooms else None
                     except Exception as e:
                         bathrooms_count = None
-                    logger.info("Adding info about", address)
+                    logger.info("Adding info about %s", address)
+                    logger.info(f"Collected {len(parsed_properties) + 1} items")
                     parsed_properties[property_url] = {
                             "address": address,
                             "price": price,
@@ -107,7 +108,8 @@ def scrape_properties_task(min_price="5000000"):
                     }
                     for image_url in images_set:
                         parsed_properties[property_url]["images"].append(image_url)
-
+                    if len(parsed_properties) > 50:
+                        break
                 except Exception as e:
                     logger.info("Error occurred", e)
             time.sleep(randint(0, 3))
@@ -118,7 +120,7 @@ def scrape_properties_task(min_price="5000000"):
             properties = driver.find_elements(By.CSS_SELECTOR, '.l-searchResult')
 
     except Exception as e:
-        logger.info("Error occurred", e)
+        logger.info("Error occurred %s", e)
 
     finally:
         driver.quit()
